@@ -15,24 +15,30 @@ public class FinnhubService {
         this.finnhubClient = finnhubClient;
     }
 
-    public record FinnhubResponseDto(String response){}
+    public record FinnhubResponseDto(
+            double currentPrice,
+            double change,
+            double percentChange,
+            double high,
+            double low,
+            double open,
+            double previousClose
+    ) {}
 
-    public Mono<FinnhubResponseDto> getFinnhubResponse(String exchange){
-        return finnhubClient.getSymbols(exchange)
-                .map(this::mapToDto);
+    public Mono<FinnhubResponseDto> getFinnhubResponse(String stock) {
+        return finnhubClient.getQuote(stock)
+                .map(q -> new FinnhubResponseDto(q.c(), q.d(), q.dp(), q.h(), q.l(), q.o(), q.pc()));
     }
 
-    private FinnhubResponseDto mapToDto(List<FinnhubClient.StockSymbol> stocks){
-        String responseText = stocks.stream()
-                .limit(10) // max amount of stocks loaded
-                .map(s -> s.symbol()+ " - " + s.description() + "(" + s.currency()+")")
-                .collect(Collectors.joining("\n"));
-
-        return new FinnhubResponseDto(responseText);
-
-
+    private FinnhubResponseDto mapToDto(FinnhubClient.StockQuote quote) {
+        return new FinnhubResponseDto(
+                quote.c(),
+                quote.d(),
+                quote.dp(),
+                quote.h(),
+                quote.l(),
+                quote.o(),
+                quote.pc()
+        );
     }
-
-
-
-}
+    }

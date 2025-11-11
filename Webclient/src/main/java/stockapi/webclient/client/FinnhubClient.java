@@ -30,22 +30,32 @@ public class FinnhubClient {
             String type
     ) {}
 
-    public Mono<List<StockSymbol>> getSymbols(String exchange){
+    public record StockQuote (
+            double c,  // current price
+         double d,  // change
+         double dp, // percent change
+         double h,  // high
+         double l,  // low
+         double o,  // open
+         double pc, // previous close
+         long t ){}   // timestamp
+
+    public Mono<StockQuote> getQuote(String symbol) {
         return client.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/stock/symbol")
-                        .queryParam("exchange", exchange)
+                        .path("/quote")
+                        .queryParam("symbol", symbol)
                         .queryParam("token", apiKey)
                         .build())
                 .retrieve()
                 .onStatus(s -> s.value() == 400, r -> r.bodyToMono(String.class)
-                        .map(msg -> new IllegalArgumentException("Finnhub 400: " +msg)))
+                        .map(msg -> new IllegalArgumentException("Finnhub 400: " + msg)))
                 .onStatus(s -> s.value() == 401, r -> r.bodyToMono(String.class)
-                        .map(msg -> new IllegalArgumentException("Finnhub 401 unauthorized: " +msg)))
+                        .map(msg -> new IllegalArgumentException("Finnhub 401 unauthorized: " + msg)))
                 .onStatus(HttpStatusCode::isError, r -> r.bodyToMono(String.class)
-                        .map(msg -> new IllegalArgumentException("Finnhub Error: " +msg)))
-                .bodyToFlux(StockSymbol.class)
-                .collectList();
+                        .map(msg -> new IllegalArgumentException("Finnhub Error: " + msg)))
+                .bodyToMono(StockQuote.class)
+                .doOnNext(System.out::println);
     }
 
 

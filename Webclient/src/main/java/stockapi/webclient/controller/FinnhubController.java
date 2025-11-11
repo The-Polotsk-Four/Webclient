@@ -2,10 +2,7 @@ package stockapi.webclient.controller;
 
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import stockapi.webclient.service.FinnhubService;
 
@@ -21,9 +18,14 @@ public class FinnhubController {
 
     public record QuereRequest(String prompt) {}
 
+    @GetMapping
+    public Mono<FinnhubService.FinnhubResponseDto> getQuote(@RequestParam String stock) {
+        return finnhubService.getFinnhubResponse(stock);
+    }
+
     @PostMapping
-    public Mono<ResponseEntity<FinnhubService.FinnhubResponseDto>> getExchange(@RequestBody QuereRequest quereRequest){
-        return finnhubService.getFinnhubResponse(quereRequest.prompt)
+    public Mono<ResponseEntity<FinnhubService.FinnhubResponseDto>> getExchange(@RequestParam String stock){
+        return finnhubService.getFinnhubResponse(stock)
                 .map(ResponseEntity::ok);
     }
 }
