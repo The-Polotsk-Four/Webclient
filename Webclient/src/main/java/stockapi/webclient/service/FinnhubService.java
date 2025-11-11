@@ -27,7 +27,7 @@ public class FinnhubService {
     ) {}
 
     public Mono<FinnhubResponseDto> getFinnhubResponse(String stock) {
-        String symbol=stock;
+        String symbol=stock.toUpperCase();
         return finnhubClient.getQuote(stock)
                 .map(q -> new FinnhubResponseDto(symbol,q.c(), q.d(), q.dp(), q.h(), q.l(), q.o(), q.pc()));
     }
