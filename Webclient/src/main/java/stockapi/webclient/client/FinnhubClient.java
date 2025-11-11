@@ -1,7 +1,6 @@
 package stockapi.webclient.client;
 
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -21,16 +20,34 @@ public class FinnhubClient {
     }
 
     public record StockSymbol(
-            String currency,
+
             String description,
             String displaySymbol,
-            String figi,
-            String mic,
             String symbol,
             String type
     ) {}
+    public record FinnhubSearchResponse(List<StockSymbol> result){}
+
+    public Mono<FinnhubSearchResponse> getSymbols(String query){
+        return client.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/search")
+                        .queryParam("q", query)
+                        .queryParam("token", apiKey)
+                        .build())
+                .retrieve()
+                .onStatus(s -> s.value() == 400, r -> r.bodyToMono(String.class)
+                        .flatMap(msg -> Mono.error(new IllegalArgumentException("Finnhub 400: " + msg))))
+                .onStatus(s -> s.value() == 401, r -> r.bodyToMono(String.class)
+                        .flatMap(msg -> Mono.error(new IllegalArgumentException("Finnhub 401 unauthorized: " + msg))))
+                .onStatus(HttpStatusCode::isError, r -> r.bodyToMono(String.class)
+                        .flatMap(msg -> Mono.error(new IllegalArgumentException("Finnhub Error: " + msg))))
+                .bodyToMono(FinnhubSearchResponse.class);
+    }
+
 
     public record StockQuote (
+            String symbol,
             double c,  // current price
          double d,  // change
          double dp, // percent change
@@ -44,7 +61,7 @@ public class FinnhubClient {
         return client.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/quote")
-                        .queryParam("symbol", symbol)
+                        .queryParam("symbol", symbol.toUpperCase())
                         .queryParam("token", apiKey)
                         .build())
                 .retrieve()

@@ -16,6 +16,7 @@ public class FinnhubService {
     }
 
     public record FinnhubResponseDto(
+            String symbol,
             double currentPrice,
             double change,
             double percentChange,
@@ -26,12 +27,14 @@ public class FinnhubService {
     ) {}
 
     public Mono<FinnhubResponseDto> getFinnhubResponse(String stock) {
+        String symbol=stock;
         return finnhubClient.getQuote(stock)
-                .map(q -> new FinnhubResponseDto(q.c(), q.d(), q.dp(), q.h(), q.l(), q.o(), q.pc()));
+                .map(q -> new FinnhubResponseDto(symbol,q.c(), q.d(), q.dp(), q.h(), q.l(), q.o(), q.pc()));
     }
 
     private FinnhubResponseDto mapToDto(FinnhubClient.StockQuote quote) {
         return new FinnhubResponseDto(
+                quote.symbol(),
                 quote.c(),
                 quote.d(),
                 quote.dp(),
@@ -41,4 +44,18 @@ public class FinnhubService {
                 quote.pc()
         );
     }
+
+    public record FinnhubSearchResultDto(
+            String description,
+            String displaySymbol,
+            String symbol,
+            String type
+    ) {}
+
+
+    public Mono<List<FinnhubClient.StockSymbol>> getFinnhubSymbols(String query){
+        return finnhubClient.getSymbols(query)
+                .map(FinnhubClient.FinnhubSearchResponse::result);
     }
+
+}
